@@ -1,0 +1,75 @@
+# getDataFromHttp("http://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip", "Dataset.zip")
+# setwd("UCI HAR Dataset")
+
+# Merges the trainings and tests
+merges <- function(){
+    message("Merging may take a minute...")
+    
+    subject_train <- read.table("train/subject_train.txt")
+    subject_test <- read.table("test/subject_test.txt")
+    S <<- rbind(subject_train, subject_test)
+    
+    x_train <- read.table("train/X_train.txt")
+    x_test <- read.table("test/X_test.txt")
+    X <<- rbind(x_train, x_test)
+    
+    y_train <- read.table("train/y_train.txt")
+    y_test <- read.table("test/y_test.txt")
+    Y <<- rbind(y_train, y_test)
+}
+
+# Deviation for each measurement.
+measure <- function(){
+    message("Measurement...")
+    
+    features <- read.table("features.txt")
+    indices <- grep("-mean\\(\\)|-std\\(\\)", features[, 2])
+    X <- X[, indices]
+    names(X) <- features[indices, 2]
+    names(X) <- gsub("\\(|\\)", "", names(X))
+    names(X) <- tolower(names(X))    
+}
+
+# Naming the activities in the dataset.
+saveMerged <- function(){
+    activities <- read.table("activity_labels.txt")
+    activities[, 2] = gsub("_", "", tolower(as.character(activities[, 2])))
+    Y[,1] = activities[Y[,1], 2]
+    names(Y) <- "activity"
+    
+    names(S) <- "subject"
+    cleaned <- cbind(S, Y, X)
+    write.table(cleaned, "new_merged_data.txt")
+    
+    message("new_merged_data.txt file created!")
+}
+
+# Tidy dataset with the averages.
+saveAvg <- function(){
+    uniqueSubjects = unique(S)[,1]
+    numSubjects = length(unique(S)[,1])
+    numActivities = length(activities[,1])
+    numCols = dim(cleaned)[2]
+    result = cleaned[1:(numSubjects*numActivities), ]
+    
+    row = 1
+    for (s in 1:numSubjects) {
+        for (a in 1:numActivities) {
+            result[row, 1] = uniqueSubjects[s]
+            result[row, 2] = activities[a, 2]
+            tmp <- cleaned[cleaned$subject==s & cleaned$activity==activities[a, 2], ]
+            result[row, 3:numCols] <- colMeans(tmp[, 3:numCols])
+            row = row+1
+        }
+    }
+    write.table(result, "new_avg_data.txt", row.name=FALSE)
+    
+    message("new_avg_data.txt file created!")
+}
+
+run_analysis <- function(){
+    merges()
+    measure()
+    saveMerged()
+    saveAvg()   
+}
