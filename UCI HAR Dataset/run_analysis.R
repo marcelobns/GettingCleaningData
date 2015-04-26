@@ -61,7 +61,7 @@ saveAvg <- function(){
             row = row+1
         }
     }
-    write.table(result, "new_avg_data.txt")
+    write.table(result, "new_avg_data.txt", row.name=FALSE)
     
     message("new_avg_data.txt file created!")
 }
